@@ -135,14 +135,16 @@ class BasicGraphicalInterface:
         '''
         new_position = game.direction_to_offset(direction)
         game.move_player(new_position)
+        self.draw(game)
+
         if not game.has_lost() and game.has_won():
-            self._stop_step()
-            self.draw(game)
-            if not messagebox.askyesno(WIN_MESSAGE, 'Play again?'):
+            self._basic_map._basic_map_canvas.after_cancel(solve)
+            if not messagebox.askyesno(LOSE_MESSAGE, 'Play again?'):
                 self._root.quit()
             else:
+                self._root.focus_force()
                 self.play(self._initial_game)
-        self.draw(game)
+
 
     def _fire(self, game: Game, direction: str):
         player = game.get_player()
@@ -171,22 +173,22 @@ class BasicGraphicalInterface:
                 break
         self.draw(game)
 
+
     def _step(self, game: Game):
         def counting():
             game.step()
-            global s
+            self.draw(game)
+            global solve
+            solve = self._basic_map._basic_map_canvas.after(1000, counting)
             if not game.has_won() and game.has_lost():
-                self._stop_step()
+                self._basic_map._basic_map_canvas.after_cancel(solve)
                 if not messagebox.askyesno(LOSE_MESSAGE, 'Play again?'):
                     self._root.quit()
                 else:
+                    self._root.focus_force()
                     self.play(self._initial_game)
-            self.draw(game)
-            s = self._basic_map._basic_map_canvas.after(1000, counting)
         counting()
 
-    def _stop_step(self):
-        self._basic_map._basic_map_canvas.after_cancel(s)
 
     def play(self, game: Game):
         self._initial_game = copy.deepcopy(game)
