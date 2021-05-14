@@ -3,11 +3,11 @@
 # @Author  : xls56i
 
 from model_class import BasicMap, InventoryView
-from a2_solution import Position, Game, Inventory, Garlic, Crossbow, HoldingPlayer, first_in_direction
+from a2_solution import Position, Game, Inventory, Garlic, Crossbow, HoldingPlayer, first_in_direction, advanced_game
 import tkinter as tk
 from tkinter import messagebox
 from constants import *
-import copy
+
 
 class BasicGraphicalInterface:
     def __init__(self, root, size: int):
@@ -143,7 +143,7 @@ class BasicGraphicalInterface:
                 self._root.quit()
             else:
                 self._root.focus_force()
-                self.play(self._initial_game)
+                self.play(advanced_game(MAP_FILE))
 
 
     def _fire(self, game: Game, direction: str):
@@ -186,12 +186,11 @@ class BasicGraphicalInterface:
                     self._root.quit()
                 else:
                     self._root.focus_force()
-                    self.play(self._initial_game)
+                    self.play(advanced_game(MAP_FILE))
         counting()
 
 
     def play(self, game: Game):
-        self._initial_game = copy.deepcopy(game)
         self._inventory_view._inventory_view_canvas.bind("<Button-1>",
                                                          self.handler_adaptor(self._inventory_click,
                                                                               inventory=game.get_player().get_inventory()))
