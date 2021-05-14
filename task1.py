@@ -70,8 +70,10 @@ class BasicGraphicalInterface:
 
         self._inventory_view = InventoryView(self._inventory_frame, size)
 
+
     def handler_adaptor(self, fun, **kwargs) -> None:
         return lambda event, fun=fun, kwargs=kwargs: fun(event, **kwargs)
+
 
     def _inventory_click(self, event, inventory: Inventory) -> None:
         pixel_x, pixel_y = event.x, event.y
@@ -86,6 +88,7 @@ class BasicGraphicalInterface:
                         break
             item.toggle_active()
         self._inventory_view.draw(inventory)
+
 
     def _key_press(self, event, game: Game) -> None:
         if event.char == 'w':
@@ -136,10 +139,10 @@ class BasicGraphicalInterface:
         new_position = game.direction_to_offset(direction)
         game.move_player(new_position)
         self.draw(game)
-
+        self._basic_map._basic_map_canvas.update()
         if not game.has_lost() and game.has_won():
-            self._basic_map._basic_map_canvas.after_cancel(solve)
-            if not messagebox.askyesno(LOSE_MESSAGE, 'Play again?'):
+            self._basic_map._basic_map_canvas.after_cancel(self._solve)
+            if not messagebox.askyesno(WIN_MESSAGE, 'Play again?'):
                 self._root.quit()
             else:
                 self._root.focus_force()
@@ -175,19 +178,16 @@ class BasicGraphicalInterface:
 
 
     def _step(self, game: Game):
-        def counting():
-            game.step()
-            self.draw(game)
-            global solve
-            solve = self._basic_map._basic_map_canvas.after(1000, counting)
-            if not game.has_won() and game.has_lost():
-                self._basic_map._basic_map_canvas.after_cancel(solve)
-                if not messagebox.askyesno(LOSE_MESSAGE, 'Play again?'):
-                    self._root.quit()
-                else:
-                    self._root.focus_force()
-                    self.play(advanced_game(MAP_FILE))
-        counting()
+        game.step()
+        self.draw(game)
+        self._solve = self._basic_map._basic_map_canvas.after(1000, self._step, game)
+        if not game.has_won() and game.has_lost():
+            self._basic_map._basic_map_canvas.after_cancel(self._solve)
+            if not messagebox.askyesno(LOSE_MESSAGE, 'Play again?'):
+                self._root.quit()
+            else:
+                self._root.focus_force()
+                self.play(advanced_game(MAP_FILE))
 
 
     def play(self, game: Game):
@@ -197,4 +197,5 @@ class BasicGraphicalInterface:
         self._basic_map._basic_map_canvas.bind("<Key>", self.handler_adaptor(self._key_press, game=game))
         self._basic_map._basic_map_canvas.focus_set()
         self.draw(game)
-        self._step(game)
+        self._basic_map._basic_map_canvas.update()
+        self._solve = self._basic_map._basic_map_canvas.after(1000, self._step, game)
