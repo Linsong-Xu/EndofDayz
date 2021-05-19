@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2021/5/7 22:19
-# @Author  : xls56i
 
 from model_class import BasicMap, InventoryView
 from a2_solution import Position, Game, Inventory, Garlic, Crossbow, HoldingPlayer, first_in_direction, advanced_game
@@ -10,7 +8,7 @@ from constants import *
 
 
 class BasicGraphicalInterface:
-    def __init__(self, root, size: int):
+    def __init__(self, root, size: int) -> None:
         '''
         Init the window
         four frame
@@ -71,9 +69,8 @@ class BasicGraphicalInterface:
         self._inventory_view = InventoryView(self._inventory_frame, size)
 
 
-    def handler_adaptor(self, fun, **kwargs) -> None:
+    def handler_adaptor(self, fun, **kwargs):
         return lambda event, fun=fun, kwargs=kwargs: fun(event, **kwargs)
-
 
     def _inventory_click(self, event, inventory: Inventory) -> None:
         pixel_x, pixel_y = event.x, event.y
@@ -124,7 +121,6 @@ class BasicGraphicalInterface:
                 tile = mapping.get((x, y), " ") or " "
                 if tile is not " ":
                     self._basic_map.draw_entity(Position(x, y), tile)
-
         '''
         draw inventory
         '''
@@ -132,7 +128,7 @@ class BasicGraphicalInterface:
         self._inventory_view.draw(game.get_player().get_inventory())
 
 
-    def _move(self, game: Game, direction: str):
+    def _move(self, game: Game, direction: str) -> None:
         '''
         move the player and redrawing
         '''
@@ -149,7 +145,7 @@ class BasicGraphicalInterface:
                 self.play(advanced_game(MAP_FILE))
 
 
-    def _fire(self, game: Game, direction: str):
+    def _fire(self, game: Game, direction: str) -> None:
         player = game.get_player()
         if player is None or not isinstance(player, HoldingPlayer):
             return  # Should never happen.
@@ -176,8 +172,7 @@ class BasicGraphicalInterface:
                 break
         self.draw(game)
 
-
-    def _step(self, game: Game):
+    def _step(self, game: Game) -> None:
         game.step()
         self.draw(game)
         self._solve = self._basic_map._basic_map_canvas.after(1000, self._step, game)
@@ -190,7 +185,7 @@ class BasicGraphicalInterface:
                 self.play(advanced_game(MAP_FILE))
 
 
-    def play(self, game: Game):
+    def play(self, game: Game) -> None:
         self._inventory_view._inventory_view_canvas.bind("<Button-1>",
                                                          self.handler_adaptor(self._inventory_click,
                                                                               inventory=game.get_player().get_inventory()))

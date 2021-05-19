@@ -6,6 +6,7 @@ from typing import Tuple, Optional, Dict, List
 import random
 from constants import *
 
+
 ## Support code
 
 def random_directions() -> List[Tuple[int, int]]:
@@ -1363,6 +1364,35 @@ class Crossbow(Pickup):
         return CROSSBOW
 
 
+class TimeMachine(Pickup):
+    """
+    Crossbow is an entity which the player can pickup.
+
+    While the player is holding a crossbow entity they are
+    able to use the fire action to launch a protectile in a
+    given direction, removing the first zombie in that direction.
+    """
+
+    def get_durability(self) -> int:
+        """
+        Return the durability of a crossbow.
+
+        A player can only hold a crossbow entity for 5 _steps_.
+        """
+        return 1
+
+    def display(self) -> str:
+        """
+        Return the character used to represent the crossbow entity in
+        a text-based grid.
+        A crossbow should be represented by the 'C' character.
+        """
+        return TIME_MACHINE
+
+    # def hold(self) -> None:
+    #     pass
+
+
 class Inventory:
     """
     An inventory holds a collection of entities which the player can pickup,
@@ -1572,6 +1602,8 @@ class AdvancedMapLoader(IntermediateMapLoader):
             return Garlic()
         elif token == CROSSBOW:
             return Crossbow()
+        elif token == TIME_MACHINE:
+            return TimeMachine()
         return super().create_entity(token)
 
 

@@ -11,10 +11,11 @@ import tkinter as tk
 from a2_solution import *
 from constants import *
 from typing import Tuple, Optional, Dict, List
+from PIL import Image
 
 
 class InitErorr(Exception):
-    def __init__(self):
+    def __init__(self) -> None:
         super(InitErorr, self).__init__()
 
     def __str__(self):
@@ -22,7 +23,7 @@ class InitErorr(Exception):
 
 
 class AbstractGrid(tk.Canvas):
-    def __init__(self, master, rows: int, cols: int, width: int, height: int, **kwargs):
+    def __init__(self, master, rows: int, cols: int, width: int, height: int, **kwargs) -> None:
         if (width % cols != 0) or (height % rows != 0):
             raise InitErorr
         self._rows_y = rows
@@ -77,7 +78,7 @@ class AbstractGrid(tk.Canvas):
 
 
 class BasicMap(AbstractGrid):
-    def __init__(self, master, size: int, **kwargs):
+    def __init__(self, master, size: int, **kwargs) -> None:
         self._rows = size
         self._cols = size
         self._rec_width = CELL_SIZE
@@ -95,10 +96,19 @@ class BasicMap(AbstractGrid):
         self._basic_map_canvas.pack(side=tk.TOP)
 
     def draw_entity(self, position: Position, title_type: str) -> None:
-        entity_bgcolor_dict = {'Z': '#B8D58E', 'T': '#B8D58E', 'C': '#E5E1EF', 'G': '#E5E1EF', 'P': '#371D33',
-                               'H': '#371D33'}
-        entity_textcolor_dict = {'Z': 'black', 'T': 'black', 'C': 'black', 'G': 'black', 'P': 'white',
-                                 'H': 'white'}
+        entity_bgcolor_dict = {ZOMBIE: ENTITY_COLOURS[ZOMBIE],
+                               TRACKING_ZOMBIE: ENTITY_COLOURS[TRACKING_ZOMBIE],
+                               CROSSBOW: ENTITY_COLOURS[CROSSBOW],
+                               GARLIC: ENTITY_COLOURS[GARLIC],
+                               PLAYER: ENTITY_COLOURS[PLAYER],
+                               HOSPITAL: ENTITY_COLOURS[HOSPITAL]}
+
+        entity_textcolor_dict = {ZOMBIE: 'black',
+                                 TRACKING_ZOMBIE: 'black',
+                                 CROSSBOW: 'black',
+                                 GARLIC: 'black',
+                                 PLAYER: 'white',
+                                 HOSPITAL: 'white'}
         bbox = self.get_bbox(position)
         self._basic_map_canvas.create_rectangle(bbox[0], bbox[1], bbox[2], bbox[3], outline='black',
                                                 fill=entity_bgcolor_dict[title_type], width=1)
@@ -110,7 +120,7 @@ class BasicMap(AbstractGrid):
 
 
 class InventoryView(AbstractGrid):
-    def __init__(self, master, rows, **kwargs):
+    def __init__(self, master, rows, **kwargs) -> None:
         '''
         The parameter rows should be set to the number of rows in the game map
         '''
@@ -169,3 +179,148 @@ class InventoryView(AbstractGrid):
         row_y = position.get_y()
         if row_y > 0:
             inventory.get_items()[row_y - 1].toggle_active()
+
+
+class ImageMap(AbstractGrid):
+    def __init__(self, master, size: int, **kwargs) -> None:
+        self._rows = size
+        self._cols = size
+        self._rec_width = CELL_SIZE
+        self._rec_height = CELL_SIZE
+        self._width = self._rec_width * size
+        self._height = self._rec_height * size
+        self._images: Dict[Position, tk.PhotoImage] = {}
+
+        self._basic_map_canvas = tk.Canvas(master, width=self._width, height=self._height, bd=0, highlightthickness=0)
+
+        self._back_ground = tk.PhotoImage(file=IMAGES[BACK_GROUND])
+        for row in range(self._rows):
+            for col in range(self._cols):
+                bbox = self.get_bbox(Position(col, row))
+                self._basic_map_canvas.create_image(bbox[0], bbox[1], image=self._back_ground, anchor='nw', tags='bg')
+        self._basic_map_canvas.pack(side=tk.TOP)
+
+    def draw_entity(self, position: Position, title_type: str) -> None:
+        entity_image_dict = {ZOMBIE: IMAGES[ZOMBIE],
+                             TRACKING_ZOMBIE: IMAGES[TRACKING_ZOMBIE],
+                             CROSSBOW: IMAGES[CROSSBOW],
+                             GARLIC: IMAGES[GARLIC],
+                             PLAYER: IMAGES[PLAYER],
+                             HOSPITAL: IMAGES[HOSPITAL],
+                             TIME_MACHINE: 'images/time_machine.png'}
+
+        self._images[position] = tk.PhotoImage(file=entity_image_dict[title_type])
+        bbox = self.get_bbox(position)
+        self._basic_map_canvas.create_image(bbox[0], bbox[1], image=self._images[position], anchor='nw', tags='entity')
+        self._basic_map_canvas.pack(side=tk.TOP)
+
+
+class StatusBar(tk.Frame):
+
+    def __init__(self, master, width: int, height: int) -> None:
+        self._width = width
+        self._height = height
+        self._button_width = self._width - 2 * CELL_SIZE
+
+        '''
+            Init chaser frame
+        '''
+        self._chaser_frame = tk.Frame(master, bd=0, bg='white', height=CELL_SIZE, width=CELL_SIZE)
+        self._chaser_frame.pack(side=tk.LEFT)
+        self._chaser_canvas = tk.Canvas(self._chaser_frame, width=CELL_SIZE, height=CELL_SIZE, bd=0,
+                                        highlightthickness=0)
+        self._chaser_image = tk.PhotoImage(file='images/chaser.png')
+        self._chaser_canvas.create_image(0, 0, image=self._chaser_image, anchor='nw')
+        self._chaser_canvas.pack(side=tk.TOP)
+
+        '''
+            Init timer frame
+        '''
+        self._timer_frame = tk.Frame(master, bd=0, height=CELL_SIZE,
+                                     width=self._button_width // 3)
+        self._timer_frame.pack(side=tk.LEFT)
+        self._timer_label_frame = tk.Frame(self._timer_frame, bd=0, height=CELL_SIZE // 2,
+                                           width=self._button_width // 3)
+        self._timer_label_frame.pack(side=tk.TOP)
+        self._timer_label_canvas = tk.Canvas(self._timer_label_frame, height=CELL_SIZE // 2,
+                                             width=self._button_width // 3, bd=0, highlightthickness=0)
+        self._timer_label_canvas.create_text(self._button_width // 6, CELL_SIZE // 4, text='Timer')
+        self._timer_label_canvas.pack(side=tk.TOP)
+
+        self._timer_num_frame = tk.Frame(self._timer_frame, bd=0, height=CELL_SIZE // 2,
+                                         width=self._button_width // 3)
+        self._timer_num_frame.pack(side=tk.TOP)
+        self._timer_num_canvas = tk.Canvas(self._timer_num_frame, height=CELL_SIZE // 2,
+                                           width=self._button_width // 3, bd=0, highlightthickness=0)
+        self._timer_num_canvas.create_text(self._button_width // 6, CELL_SIZE // 4, text='0 mins 0 seconds')
+        self._timer_num_canvas.pack(side=tk.TOP)
+
+        '''
+            Init moves frame
+        '''
+        self._moves_frame = tk.Frame(master, bd=0, height=CELL_SIZE,
+                                     width=self._button_width // 3)
+        self._moves_frame.pack(side=tk.LEFT)
+        self._moves_label_frame = tk.Frame(self._moves_frame, bd=0, height=CELL_SIZE // 2,
+                                           width=self._button_width // 3)
+        self._moves_label_frame.pack(side=tk.TOP)
+        self._moves_label_canvas = tk.Canvas(self._moves_label_frame, height=CELL_SIZE // 2,
+                                             width=self._button_width // 3, bd=0, highlightthickness=0)
+        self._moves_label_canvas.create_text(self._button_width // 6, CELL_SIZE // 4, text='Moves made')
+        self._moves_label_canvas.pack(side=tk.TOP)
+
+        self._moves_num_frame = tk.Frame(self._moves_frame, bd=0, height=CELL_SIZE // 2,
+                                         width=self._button_width // 3)
+        self._moves_num_frame.pack(side=tk.TOP)
+        self._moves_num_canvas = tk.Canvas(self._moves_num_frame, height=CELL_SIZE // 2,
+                                           width=self._button_width // 3, bd=0, highlightthickness=0)
+        self._moves_num_canvas.create_text(self._button_width // 6, CELL_SIZE // 4, text='0 moves')
+        self._moves_num_canvas.pack(side=tk.TOP)
+
+        '''
+            Init button frame
+        '''
+        self._button_frame = tk.Frame(master, bd=0, height=CELL_SIZE,
+                                      width=self._button_width - 2 * (self._button_width // 3))
+        self._button_frame.pack(side=tk.LEFT)
+        self._button_frame.pack_propagate(False)
+        self._restart_button_frame = tk.Frame(self._button_frame, bd=0, height=CELL_SIZE // 2,
+                                              width=self._button_width - 2 * (self._button_width // 3))
+        self._restart_button_frame.pack(side=tk.TOP)
+        self._restart_button_frame.pack_propagate(False)
+        self._restart_button = tk.Button(self._restart_button_frame, text="Restart Game")
+        self._restart_button.pack(side=tk.TOP)
+        self._quit_button_frame = tk.Frame(self._button_frame, bd=0, height=CELL_SIZE // 2,
+                                           width=self._button_width - 2 * (self._button_width // 3))
+        self._quit_button_frame.pack(side=tk.TOP)
+        self._quit_button_frame.pack_propagate(False)
+        self._quit_button = tk.Button(self._quit_button_frame, text="Quit Game")
+        self._quit_button.pack(side=tk.TOP)
+
+        '''
+            Init chasee frame
+        '''
+        self._chasee_frame = tk.Frame(master, bd=0, bg='white', height=CELL_SIZE, width=CELL_SIZE)
+        self._chasee_frame.pack(side=tk.LEFT)
+        self._chasee_canvas = tk.Canvas(self._chasee_frame, width=CELL_SIZE, height=CELL_SIZE, bd=0,
+                                        highlightthickness=0)
+        self._chasee_image = tk.PhotoImage(file='images/chasee.png')
+        self._chasee_canvas.create_image(0, 0, image=self._chasee_image, anchor='nw')
+        self._chasee_canvas.pack(side=tk.TOP)
+
+    def change_timer(self, time: int) -> None:
+        self._timer_num_canvas.delete("all")
+        minutes = str(time // 60)
+        seconds = str(time % 60)
+        self._timer_num_canvas.create_text(self._button_width // 6, CELL_SIZE // 4,
+                                           text=minutes + ' mins ' + seconds + ' seconds')
+
+    def change_move(self, moves: int) -> None:
+        self._moves_num_canvas.delete("all")
+        self._moves_num_canvas.create_text(self._button_width // 6, CELL_SIZE // 4, text=str(moves) + ' moves')
+
+    def get_quit_button(self) -> tk.Button:
+        return self._quit_button
+
+    def get_restart_button(self) -> tk.Button:
+        return self._restart_button

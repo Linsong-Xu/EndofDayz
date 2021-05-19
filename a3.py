@@ -15,8 +15,8 @@ from typing import Tuple, Optional, Dict, List
 # Uncomment the following imports to import the view classes that represent
 # the GUI for each of the tasks that you implement in the assignment.
 from task1 import BasicGraphicalInterface
-##from task2 import ImageGraphicalInterfaces
-##from csse7030 import MastersGraphicalInterface
+from task2 import ImageGraphicalInterface
+from csse7030 import MastersGraphicalInterface
 
 
 def main() -> None:
@@ -27,13 +27,14 @@ def main() -> None:
     root.title('EndOfDayz')
     if TASK == 1:
         gui = BasicGraphicalInterface
-    # elif TASK == 2:
-    #     gui = ImageGraphicalInterface
-    # else:
-    #     gui = MastersGraphicalInterface
+    elif TASK == 2:
+        gui = ImageGraphicalInterface
+    else:
+        gui = MastersGraphicalInterface
     app = gui(root, game.get_grid().get_size())
     app.play(game)
     root.mainloop()
+
 
 if __name__ == '__main__':
     main()
