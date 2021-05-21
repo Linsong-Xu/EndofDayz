@@ -10,29 +10,38 @@ from typing import Tuple, Optional, Dict, List
 
 
 class MastersGraphicalInterface:
+    """
+    The MastersGraphicalInterface class manage the overall view
+    and event handling.
+
+                                    *******************************************************
+                                    *                  _title_label_frame                 *
+                                    *******************************************************
+
+                                    *******************************************************
+                                    *                _map_innventory_frame                *
+                                    *  **************************  ********************** *
+                                    *  *                        *  *                    * *
+                                    *  *       _map_frame       *  *  _inventory_frame  * *
+                                    *  *                        *  *                    * *
+                                    *  *                        *  *                    * *
+                                    *  **************************  ********************** *
+                                    *******************************************************
+
+                                    *******************************************************
+                                    *                  _status_bar_frame                 *
+                                    *******************************************************
+    """
     def __init__(self, root, size: int) -> None:
-        '''
-        Init the window
-        five frame
-                                |------------------------------------------------------|
-                                |                  _title_label_frame                  |
-                                |______________________________________________________|
+        """
+        The parameter root represents the root window and size represents the number of rows (= number of columns)
+        in the game map. This method draw the title label, and instantiate and pack the BasicMap, InventoryView,
+        StatusBar Frame and File Menu.
 
-                                |______________________________________________________|
-                                |                _map_innventory_frame                 |
-                                |  |------------------------|  |---------------------| |
-                                |  |                        |  |                     | |
-                                |  |       _map_frame       |  |  _inventory_frame   | |
-                                |  |                        |  |                     | |
-                                |  |                        |  |                     | |
-                                |  |------------------------|  |---------------------| |
-                                |______________________________________________________|
-
-                                |------------------------------------------------------|
-                                |                  _status_bar_frame                  |
-                                |______________________________________________________|
-
-        '''
+        Parameters:
+            root: The root of the window.
+            size: The size of the basic map.
+        """
         self._root = root
         self._size = size
         self._window_width = size * CELL_SIZE + INVENTORY_WIDTH + 12
@@ -45,9 +54,9 @@ class MastersGraphicalInterface:
         self._root.minsize(self._window_width, self._window_height)
         self._root.maxsize(self._window_width, self._window_height)
 
-        '''
+        """
         Init the title label
-        '''
+        """
         self._title_label_frame = tk.Frame(self._root, bd=2)
         self._title_label_frame.pack(side=tk.TOP)
         self._title_label_background_color = DARK_PURPLE
@@ -61,9 +70,9 @@ class MastersGraphicalInterface:
         self._title_label_canvas.create_image(0, 0, image=self._title_label_image, anchor='nw')
         self._title_label_canvas.pack(side=tk.TOP)
 
-        '''
+        """
         Init map and inventory frame
-        '''
+        """
         self._map_innventory_frame = tk.Frame(self._root, bd=2)
         self._map_innventory_frame.pack(side=tk.TOP)
         self._map_frame = tk.Frame(self._map_innventory_frame, bd=2)
@@ -73,18 +82,18 @@ class MastersGraphicalInterface:
         self._basic_map = ImageMap(self._map_frame, size)
         self._inventory_view = InventoryView(self._inventory_frame, size)
 
-        '''
+        """
         Init StatusBar Frame
-        '''
+        """
         self._status_bar_frame = tk.Frame(self._root, bd=2)
         self._status_bar_frame.pack(side=tk.TOP)
         self._status_bar = StatusBar(self._status_bar_frame, width=self._window_width - 8, height=CELL_SIZE)
         self._status_bar.get_quit_button().configure(command=self.quit)
         self._status_bar.get_restart_button().configure(command=self.restart)
 
-        '''
+        """
         Init the file menu
-        '''
+        """
         self._menubar = tk.Menu(self._root)
         self._filemenu = tk.Menu(self._menubar, tearoff=0)
         self._filemenu.add_command(label="Restart game", command=self.restart)
@@ -94,8 +103,11 @@ class MastersGraphicalInterface:
         self._filemenu.add_separator()
         self._filemenu.add_command(label="Quit", command=self.quit)
         self._menubar.add_cascade(label="File", menu=self._filemenu)
-
         self._root.config(menu=self._menubar)
+
+        """
+        Init the arrow images, background images and back 5 steps games.
+        """
         self._arrow_images = {
             Position(1, 0): ImageTk.PhotoImage(Image.open(IMAGES[ARROW])),
             Position(0, -1): ImageTk.PhotoImage(Image.open(IMAGES[ARROW]).convert('RGBA').rotate(90)),
@@ -106,13 +118,30 @@ class MastersGraphicalInterface:
         self._back5games = [None, None, None, None, None, None]
 
     def handler_adaptor(self, fun, **kwargs) -> None:
+        """
+        Handler adaptor for transfer parameters
+
+        Parameters:
+            fun: Functions to execute.
+        """
         return lambda event, fun=fun, kwargs=kwargs: fun(event, **kwargs)
 
     def _inventory_click(self, event, inventory: Inventory) -> None:
+        """
+        This method is called when the user left clicks on inventory view.
+        It handle activating or deactivating the clicked item (if one exists)
+        and update both the model and the view accordingly.
+
+        If the inventory is Time Machine return 5 steps game or restart the game.
+
+        Parameters:
+            event: <Button-1> event.
+            inventory: The inventory which HoldingPlayer has.
+        """
         pixel_x, pixel_y = event.x, event.y
         position = self._inventory_view.pixel_to_position(Position(pixel_x, pixel_y))
         row_index = position.get_y()
-        if row_index > 0 and row_index <= len(inventory.get_items()):
+        if 0 < row_index <= len(inventory.get_items()):
             item = inventory.get_items()[row_index - 1]
             if not item.is_active():
                 for active_item in inventory.get_items():
@@ -135,6 +164,14 @@ class MastersGraphicalInterface:
         self._inventory_view.draw(inventory)
 
     def _key_press(self, event, game: Game) -> None:
+        """
+        This method is called when the user press the 'w', 'a', 's', 'd' or 'up', 'down', 'left',  'right',
+        it handle the player to move and fire the crossbow
+
+        Parameters:
+            event: <Key> event.
+            game: The game that the player is playing.
+        """
         if event.char == 'w':
             self._move(game, UP)
         elif event.char == 'a':
@@ -155,10 +192,16 @@ class MastersGraphicalInterface:
             return
 
     def draw(self, game: Game) -> None:
-        '''
-        draw entity
-        '''
+        """
+        This method can draw the basic map entities and inventory items.
 
+        Parameters:
+            game: The game that the player is playing.
+        """
+
+        """
+        draw entity
+        """
         self._basic_map._basic_map_canvas.delete("entity")
         mapping = game.get_grid().serialize()
         size = self._size
@@ -169,16 +212,20 @@ class MastersGraphicalInterface:
                 if tile is not " ":
                     self._basic_map.draw_entity(Position(x, y), tile)
 
-        '''
+        """
         draw inventory
-        '''
+        """
         self._inventory_view._inventory_view_canvas.delete("pickup")
         self._inventory_view.draw(game.get_player().get_inventory())
 
     def _move(self, game: Game, direction: str) -> None:
-        '''
-        move the player and redrawing
-        '''
+        """
+        Move the player and redrawing the basic map.
+
+        Parameters:
+            game: The game that the player is playing.
+            direction: The direction which the player will move to.
+        """
         new_position = game.direction_to_offset(direction)
         game.move_player(new_position)
         self._status_bar.change_move(game.get_moves())
@@ -218,6 +265,9 @@ class MastersGraphicalInterface:
                                           command=lambda: self.play_again_button_clicked(score))
             play_again_button.pack(side=tk.LEFT)
 
+        """
+        Save the back 5 steps game.
+        """
         if game.get_moves() <= 6:
             self._back5games[game.get_moves()-1] = self.get_no_time_machine_game_from_dict(self.get_duplication_dict(game.__dict__))
         else:
@@ -225,6 +275,30 @@ class MastersGraphicalInterface:
             self._back5games.append(self.get_no_time_machine_game_from_dict(self.get_duplication_dict(game.__dict__)))
 
     def _fire(self, game: Game, direction: str) -> None:
+        """
+        Fire takes the following actions:
+        \\begin{enumerate}
+        \\item Check that the user has something to fire, i.e. a crossbow,
+                if they do not hold a crossbow,
+                print `You are not holding anything to fire!'
+        \\item Prompt the user to enter a direction in which to fire, with
+                `Direction to fire:{\\textvisiblespace}'
+        \\item If the direction is not one of `W', `A', `S' or `D',
+                print `Invalid firing direction entered!'
+        \\item Find the first entity, starting from the player's position
+                in the direction specified.
+        \\item If there are no entities in that direction, or if the
+                first entity is not a zombie, (zombies include tracking zombies),
+                then print `No zombie in that direction!'
+        \\item If the first entity in that direction is a zombie, remove the
+                zombie.
+        \\item Trigger the _step_ event.
+        \\end{enumerate}`
+
+        Parameters:
+            game:  The game that the player is playing.
+            direction: The direction which the play is firing crossbow to.
+        """
         player = game.get_player()
         if player is None or not isinstance(player, HoldingPlayer):
             return  # Should never happen.
@@ -251,6 +325,15 @@ class MastersGraphicalInterface:
                 break
 
     def crossbow_animations(self, game: Game, last_position: Position, now_position: Position, offset: Position) -> None:
+        """
+        This method can handle the animations of crossbow which the player fire.
+
+        Parameters:
+            game: The game which the player is playing.
+            last_position: The last step position of crossbow.
+            now_position: The position of crossbow in this step.
+            offset: The offset which the crossbow is going to.
+        """
         if game.get_grid().in_bounds(now_position):
             entity = game.get_grid().get_entity(now_position)
             bbox = self._basic_map.get_bbox(now_position)
@@ -283,6 +366,12 @@ class MastersGraphicalInterface:
 
 
     def _step(self, game: Game) -> None:
+        """
+        The `step` method is called on every second in the game, it controls the move of zombies.
+
+        Parameters:
+            game: The game that the player is playing.
+        """
         game.step()
         self._status_bar.change_timer(game.get_steps())
         self.draw(game)
@@ -304,6 +393,13 @@ class MastersGraphicalInterface:
                 self.play(advanced_game(MAP_FILE))
 
     def play(self, game: Game) -> None:
+        """
+        The play method implements the game loop, constantly prompting the user
+        for their action, performing the action until the game is over.
+
+        Parameters:
+            game: The game that the player is playing.
+        """
         self._game = game
         self._inventory_view._inventory_view_canvas.bind("<Button-1>",
                                                          self.handler_adaptor(self._inventory_click,
@@ -315,22 +411,41 @@ class MastersGraphicalInterface:
         self._solve = self._basic_map._basic_map_canvas.after(1000, self._step, game)
 
     def quit(self) -> None:
+        """
+        This method can quit the game.
+        """
         self._basic_map._basic_map_canvas.after_cancel(self._solve)
         self._root.quit()
 
     def restart(self) -> None:
+        """
+        This method can restart the game.
+        """
         self._basic_map._basic_map_canvas.after_cancel(self._solve)
         self._status_bar.change_timer(0)
         self._status_bar.change_move(0)
         self.play(advanced_game(MAP_FILE))
 
     def save(self) -> None:
+        """
+        This method can save the game.
+        """
         pass
 
     def load(self) -> None:
+        """
+        This method can load the game.
+        """
         pass
 
     def display_high_scores(self) -> None:
+        """
+        This method is to display the high scores
+        """
+
+        """
+        Read the HIGH_SCORES_FILE and read high scores.
+        """
         with open(HIGH_SCORES_FILE, mode='a+') as high_score_file:
             high_score_file.seek(0)
             contents = high_score_file.readlines()
@@ -345,8 +460,10 @@ class MastersGraphicalInterface:
             else:
                 high_scores.append(name_score[0] + ': ' + str(score_second) + 's')
 
+        """
+        Create high score top level window
+        """
         self._high_score = tk.Toplevel(self._root)
-
         self._high_score.geometry('200x' + str((len(high_scores) + 1) * 50 + 30) + '+' + str(
             (self._screen_width - 200) // 2) + '+' + str(
             (self._screen_height - (len(high_scores) + 1) * 50 + 30) // 2))
@@ -360,6 +477,9 @@ class MastersGraphicalInterface:
         self._high_score_label_canvas.create_text(100, 25, text='High Scores', fill='white', font=('Purisa', 30))
         self._high_score_label_canvas.pack(side=tk.TOP)
 
+        """
+        Display the high scores and 'Done' button.
+        """
         for i in range(min(MAX_ALLOWED_HIGH_SCORES, len(high_scores))):
             name_frame = tk.Frame(self._high_score, bd=0)
             name_frame.pack(side=tk.TOP)
@@ -373,17 +493,40 @@ class MastersGraphicalInterface:
         button.pack()
 
     def enter_button_clicked(self, score: int) -> None:
+        """
+        This method is called when the player click the 'Enter' button.
+        And you can enter your name to display next to their score (game time in seconds)
+        in the high scores table if they are within the top 3;
+
+        Parameters:
+            score: The score which the player got.
+        """
         winner_name = self._name_value.get()
+
+        """
+        If the player didn't create a name, we call him 'XXX XXX' default.
+        """
         if winner_name == '':
             winner_name = 'XXX XXX'
         winner_score = score
         self.change_high_score_file(winner_name, winner_score)
 
+        """
+        If the user opts not to play again, the window should remain open, displaying the final game state.
+        """
         self._inventory_view._inventory_view_canvas.unbind("<Button-1>")
         self._basic_map._basic_map_canvas.unbind("<Key>")
         self._win_window.destroy()
 
     def play_again_button_clicked(self, score: int) -> None:
+        """
+        This method is called when the player click the 'Enter and play again' button.
+        And you can enter your name to display next to their score (game time in seconds)
+        in the high scores table if they are within the top 3 and restart the game;
+
+        Parameters:
+            score: The score which the player got.
+        """
         winner_name = self._name_value.get()
         if winner_name == '':
             winner_name = 'XXX XXX'
@@ -395,6 +538,17 @@ class MastersGraphicalInterface:
         self.play(advanced_game(MAP_FILE))
 
     def change_high_score_file(self, winner_name: str, winner_score: int) -> None:
+        """
+        This method can change the content of the HIGH_SCORES_FILE
+
+        Parameters:
+            winner_name: The name of the winner player.
+            winner_score: The score of the winner player.
+        """
+
+        """
+        Read the HIGH_SCORES_FILE
+        """
         with open(HIGH_SCORES_FILE, mode='a+') as high_score_file:
             high_score_file.seek(0)
             contents = high_score_file.readlines()
@@ -402,6 +556,12 @@ class MastersGraphicalInterface:
         for y, line in enumerate(contents):
             name_score = line.strip().split(':')
             name_scores.append((name_score[0], int(name_score[1])))
+
+        """
+        If the content of HIGH_SCORES_FILE less than MAX_ALLOWED_HIGH_SCORES,
+        just append the new winner and resort them, then write them to HIGH_SCORES_FILE.
+        Else pop the worst player, and add the new winner then resort them, and write them to HIGH_SCORES_FILE.
+        """
         if len(name_scores) < MAX_ALLOWED_HIGH_SCORES:
             name_scores.append((winner_name, winner_score))
             name_scores = sorted(name_scores, key=lambda x: x[1])
@@ -416,6 +576,12 @@ class MastersGraphicalInterface:
                     high_score_file.writelines(item[0] + ':' + str(item[1]) + '\n')
 
     def get_duplication_dict(self, game_dict: Dict) -> Dict:
+        """
+        This method can get a duplication dict from the game which the player is playing.
+
+        Parameters:
+            game_dict: The game.__dict__ which the player is playing.
+        """
         duplication_dict = {}
         for key, item in game_dict.items():
             if isinstance(item, int) or isinstance(item, str) or isinstance(item, bool):
@@ -435,6 +601,12 @@ class MastersGraphicalInterface:
         return duplication_dict
 
     def get_complete_game_from_dict(self, game_dict: Dict) -> Game:
+        """
+        This method can get a complete copy of game from the game dict which the player saved.
+
+        Parameters:
+            game_dict: The game.__dict__ which the player saved.
+        """
         grid = Grid(game_dict['_grid']['_size'])
         for key, item in game_dict['_grid']['_tiles'].items():
             if item['class_name'] == 'TimeMachine':
@@ -487,6 +659,13 @@ class MastersGraphicalInterface:
 
 
     def get_no_time_machine_game_from_dict(self, game_dict: Dict) -> Game:
+        """
+        This method can get a copy of game from the game dict which the player saved except time machine,
+        because time machine can only be applied to the player once
+
+        Parameters:
+            game_dict: The game.__dict__ which the player saved.
+        """
         grid = Grid(game_dict['_grid']['_size'])
         for key, item in game_dict['_grid']['_tiles'].items():
             if item['class_name'] == 'Crossbow':

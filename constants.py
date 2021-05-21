@@ -1,8 +1,8 @@
 """ Constants """
 
 ##---- Configurations ----##
-TASK = 3
-MAP_FILE = 'maps/basic5.txt'
+TASK = 1
+MAP_FILE = 'maps/basic4.txt'
 
 
 ##---- Assignment 2 Constants ----##
